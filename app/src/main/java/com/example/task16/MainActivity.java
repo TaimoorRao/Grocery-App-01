@@ -1,6 +1,8 @@
 package com.example.task16;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -35,6 +37,19 @@ public class MainActivity extends AppCompatActivity {
         mAdapter = new GroceryAdapter(this, getAllItems());
         recyclerView.setAdapter(mAdapter);
 
+        new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                removeItem((long) viewHolder.itemView.getTag());
+            }
+        }).attachToRecyclerView(recyclerView);
+
         mEditText_Name = findViewById(R.id.editText_name);
         mTextView_Amount = findViewById(R.id.textView_amount);
         Button mButtonIncrease = findViewById(R.id.button_increase);
@@ -63,19 +78,21 @@ public class MainActivity extends AppCompatActivity {
         });
     }
 
-    public void increase(){
+    public void increase() {
         mAmount++;
         mTextView_Amount.setText(String.valueOf(mAmount));
     }
-    public void decrease(){
-        if (mAmount> 0 ) {
+
+    public void decrease() {
+        if (mAmount > 0) {
             mAmount--;
             mTextView_Amount.setText(String.valueOf(mAmount));
         }
     }
-    public void addItem(){
-        if( mEditText_Name.getText().toString().trim().length() == 0 || mAmount == 0 ) {
-            Toast toast = Toast.makeText(this,"Amount is zero or Item is null!",Toast.LENGTH_SHORT);
+
+    public void addItem() {
+        if (mEditText_Name.getText().toString().trim().length() == 0 || mAmount == 0) {
+            Toast toast = Toast.makeText(this, "Amount is zero or Item is null!", Toast.LENGTH_SHORT);
             toast.show();
             return;
         }
@@ -84,10 +101,17 @@ public class MainActivity extends AppCompatActivity {
         contentValues.put(GroceryContract.GroceryEntry.COLUMN_NAME, name);
         contentValues.put(GroceryContract.GroceryEntry.COLUMN_AMOUNT, mAmount);
 
-        mDatabase.insert(GroceryContract.GroceryEntry.TABLE_NAME, null,contentValues);
+        mDatabase.insert(GroceryContract.GroceryEntry.TABLE_NAME, null, contentValues);
         mAdapter.swapCursor(getAllItems());
 
         mEditText_Name.getText().clear();
+    }
+
+    private void removeItem(long id) {
+        mDatabase.delete(GroceryContract.GroceryEntry.TABLE_NAME,
+                GroceryContract.GroceryEntry._ID + "=" + id,
+                null);
+        mAdapter.swapCursor(getAllItems());
     }
 
     private Cursor getAllItems() {
